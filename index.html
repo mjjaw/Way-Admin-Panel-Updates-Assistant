@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Way+ Onboarding Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1c2330;
+    --border: #30363d;
+    --accent: #2563eb;
+    --accent-glow: rgba(37,99,235,0.25);
+    --accent2: #10b981;
+    --text: #e6edf3;
+    --text-muted: #8b949e;
+    --user-bubble: #1e3a5f;
+    --bot-bubble: #1c2330;
+    --error: #ef4444;
+    --warn: #f59e0b;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── Header ── */
+  header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 24px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .logo {
+    width: 36px; height: 36px;
+    background: var(--accent);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 700; color: white;
+    letter-spacing: -1px;
+    box-shadow: 0 0 16px var(--accent-glow);
+  }
+
+  .header-info h1 { font-size: 15px; font-weight: 600; }
+  .header-info p  { font-size: 12px; color: var(--text-muted); }
+
+  .status-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--accent2);
+    box-shadow: 0 0 8px var(--accent2);
+    margin-left: auto;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity:1; } 50% { opacity:.4; }
+  }
+
+  /* ── Chat area ── */
+  #chat {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    scroll-behavior: smooth;
+  }
+
+  #chat::-webkit-scrollbar { width: 4px; }
+  #chat::-webkit-scrollbar-track { background: transparent; }
+  #chat::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  /* ── Messages ── */
+  .msg { display: flex; gap: 10px; max-width: 780px; animation: fadeUp .25s ease; }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+
+  .msg.user { margin-left: auto; flex-direction: row-reverse; }
+
+  .avatar {
+    width: 30px; height: 30px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 600; flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .bot-avatar  { background: var(--accent); color: white; }
+  .user-avatar { background: var(--surface2); color: var(--text-muted); border: 1px solid var(--border); }
+
+  .bubble {
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 13.5px;
+    line-height: 1.65;
+    max-width: 660px;
+  }
+
+  .msg.bot  .bubble { background: var(--bot-bubble); border: 1px solid var(--border); border-top-left-radius: 4px; }
+  .msg.user .bubble { background: var(--user-bubble); border: 1px solid #2563eb55; border-top-right-radius: 4px; }
+
+  .bubble strong { color: #93c5fd; font-weight: 600; }
+  .bubble em     { color: var(--warn); font-style: normal; font-weight: 500; }
+  .bubble code   { font-family: 'DM Mono', monospace; background: #ffffff10; padding: 1px 5px; border-radius: 4px; font-size: 12px; color: #a5f3fc; }
+
+  .bubble ul { padding-left: 18px; margin: 6px 0; }
+  .bubble ul li { margin: 3px 0; }
+
+  .bubble .tag {
+    display: inline-block; font-size: 10px; font-weight: 600;
+    padding: 2px 7px; border-radius: 20px; margin-bottom: 6px;
+    text-transform: uppercase; letter-spacing: .5px;
+  }
+  .tag-scope { background: #1e3a5f; color: #93c5fd; }
+  .tag-val   { background: #14532d; color: #86efac; }
+  .tag-note  { background: #451a03; color: #fcd34d; }
+
+  /* ── Typing ── */
+  .typing-dots { display: flex; gap: 4px; align-items: center; padding: 4px 2px; }
+  .typing-dots span {
+    width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted);
+    animation: blink 1.2s infinite;
+  }
+  .typing-dots span:nth-child(2) { animation-delay: .2s; }
+  .typing-dots span:nth-child(3) { animation-delay: .4s; }
+  @keyframes blink { 0%,80%,100%{opacity:.2} 40%{opacity:1} }
+
+  /* ── Quick replies ── */
+  #quick-replies {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    padding: 0 20px 12px;
+    flex-shrink: 0;
+  }
+
+  .qr {
+    font-size: 12px; padding: 6px 12px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 20px; cursor: pointer; color: var(--text-muted);
+    transition: all .15s;
+    white-space: nowrap;
+  }
+  .qr:hover { border-color: var(--accent); color: var(--text); background: #1e3a5f44; }
+
+  /* ── Input area ── */
+  #input-area {
+    padding: 14px 20px 18px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .input-row {
+    display: flex; gap: 10px; align-items: flex-end;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 12px; padding: 8px 10px;
+    transition: border-color .15s;
+  }
+  .input-row:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+
+  #user-input {
+    flex: 1; background: transparent; border: none; outline: none;
+    color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 13.5px;
+    resize: none; line-height: 1.5; max-height: 120px;
+    min-height: 22px;
+  }
+  #user-input::placeholder { color: var(--text-muted); }
+
+  #send-btn {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: var(--accent); border: none; cursor: pointer;
+    color: white; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: background .15s, transform .1s;
+  }
+  #send-btn:hover { background: #1d4ed8; }
+  #send-btn:active { transform: scale(.94); }
+  #send-btn:disabled { background: var(--border); cursor: not-allowed; }
+
+  #send-btn svg { width:15px; height:15px; fill:white; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">W+</div>
+  <div class="header-info">
+    <h1>Way+ Onboarding Assistant</h1>
+    <p>Partner Onboarding · Admin Panel · Phase 1</p>
+  </div>
+  <div class="status-dot"></div>
+</header>
+
+<div id="chat"></div>
+
+<div id="quick-replies">
+  <div class="qr" onclick="sendQuick('What is in Phase 1 scope?')">Phase 1 scope</div>
+  <div class="qr" onclick="sendQuick('What are the default field values in Create Vendor modal?')">Vendor defaults</div>
+  <div class="qr" onclick="sendQuick('What validations apply to the Plan Mapping section?')">Plan validations</div>
+  <div class="qr" onclick="sendQuick('How does the duplicate agent email check work?')">Duplicate email</div>
+  <div class="qr" onclick="sendQuick('What happens when vendor creation succeeds or fails?')">Submit behavior</div>
+  <div class="qr" onclick="sendQuick('What are all the acceptance criteria?')">Acceptance criteria</div>
+</div>
+
+<div id="input-area">
+  <div class="input-row">
+    <textarea id="user-input" rows="1" placeholder="Ask about vendor creation, agent management, validations…"></textarea>
+    <button id="send-btn" onclick="sendMessage()" title="Send">
+      <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+    </button>
+  </div>
+</div>
+
+<script>
+const SYSTEM_PROMPT = `You are a product assistant for the Way+ Agency Portal Partner Onboarding project (Phase 1). You help developers and QA understand requirements, flows, edge cases, and expected behavior.
+
+SOURCE OF TRUTH — answer only based on this spec:
+
+=== PHASE 1 SCOPE ===
+Phase 1 is CREATE ONLY. No listing tables, filters, search, view, edit, update, or delete on either page. Both Vendor Management and Agent Management pages show a 'Coming your Way soon!' UI. Full CRUD and listing deferred to Phase 2.
+
+=== PAGES ===
+Vendor Management: Way+ > Vendor Management. Heading: 'Vendor management'. Breadcrumb: Home / Way+ / Vendor management. Shows 'Coming your Way soon!' UI + 'Create New Vendor' CTA (top-right).
+Agent Management: Way+ > Agent Management. Heading: 'Agent management'. Breadcrumb: Home / Way+ / Agent management. Shows 'Coming your Way soon!' UI + 'Add New Agent' CTA (top-right). KNOWN BUG: current breadcrumb shows 'Home / Vendor management / Create New Vendor' — must be fixed to 'Home / Way+ / Agent management'.
+
+=== ACCESS CONTROL ===
+Only Wayplus Super Admin can perform write operations. All other roles see CTAs disabled or hidden. CTAs are always visible regardless of role; only interactivity differs.
+
+=== CREATE NEW VENDOR MODAL ===
+Structure: Sticky header ('Create New Vendor' title + X close icon), sticky footer ('Create Vendor' CTA), scrollable body with 3 sections.
+
+Section 1 — Vendor Information:
+- Partnership Type* (default: Agency Portal) — options: Agency Portal, Marketplace, API Integration, Batchfile Upload, Others
+- Name* — required, no uniqueness check, no character limit
+- Address — optional, no format/length/uniqueness validation
+- Phone Number* — digits and '+' only; validated on keypress AND paste; allowed anywhere
+- Email Address* — RFC 5321 format; validated on blur and on submit
+- Status (default: Active) — options: Active, Inactive
+
+Section 2 — Insurance/Refinance Configuration:
+Contact Details: Service Contact Number*, RSA Contact Number*, Email Address (optional), Upload Logo (PNG only, any size, validated by MIME type + file extension, case-insensitive .PNG/.png)
+Insurance Settings: Hide Insurance* (default: Yes) — sub-fields disabled on load. When Hide Insurance = No: Max Insurance Hide Days*, Insurance Message Title*, Insurance Message Body* become enabled and required. Values preserved on toggle.
+Refinance Settings: Hide Refinance* (default: No) — sub-fields enabled on load. When Hide Refinance = Yes: Refinance Message Title*, Refinance Message Body* become disabled. Values preserved on toggle.
+
+Section 3 — Plan Mapping:
+- Plan* dropdown — shows 'Plan Name (UUID)' format e.g. 'Gold 10 (123e4567-e89b-12d3-a456-426614174000)'
+- Retail Price* — required, numeric
+- Maximum Price* — required, numeric, must be >= Retail Price (equal is valid)
+- Plan de-duplication: UUID-based; selected plan removed from other row dropdowns; restored if row removed
+- First plan row present by default on modal open, cannot be removed; additional rows have X icons
+- At least one plan row required on submit
+- + Add Plan button adds new row
+
+Discard confirmation: Triggered when X clicked with any unsaved changes. If confirmed: modal closes, no data saved. If cancelled: modal stays open with data intact. Silent close if no fields touched.
+
+Submit behavior:
+- Loading: CTA disabled + loading indicator during submission (prevents double-submit)
+- Success: 'Vendor Created Successfully' popup (green, checkmark) → popup close → modal closes → full page refresh
+- Failure: 'Vendor Creation Failed' popup (red, error + developer trace) → popup close → modal stays open with all data intact for retry
+
+=== ADD NEW AGENT MODAL ===
+Opens with one default blank agent row. Fields per row: Vendor Name* (dropdown — Active vendors only), Email* (text), Agency Portal (None/Admin/Agent, default None), Partner Portal (None/Admin/Agent, default None), NDPP Dashboard (None/Admin/Agent, default None).
+
+Agency Portal conditional: When Agency Portal ≠ None, a bill-to-house access row appears: "Has bill to house access in agency portal" — Yes/No radio.
+
++ Add Agent button: adds new blank row; max 50 rows; button disabled/hidden at 50 rows.
+
+Each row = one vendor + one email. To link one agent to multiple vendors, add multiple rows.
+
+Duplicate email check: scoped per vendor. Same email + different vendor = valid. Same email + same vendor in same submission = invalid. Error: 'Agent email addresses must be unique.' (shown on duplicate row).
+
+At least one agent row required. Error if all removed: 'Please add at least one agent.'
+
+Submit behavior:
+- Loading: CTA disabled + loading indicator
+- Success: 'Agent Added Successfully' popup → popup close → modal closes; page stays in 'Coming your Way soon!' state
+- Failure: 'Agent Addition Failed' popup (red, error + developer trace) → popup close → modal stays open with data intact for retry
+
+=== FULL VALIDATION ERROR MESSAGES ===
+Vendor Information:
+- Partnership Type*: no selection → 'Please select a partnership type.'
+- Name*: empty → 'Please enter the vendor name.'
+- Phone Number*: invalid chars → 'Only numbers and + are allowed.' | empty → 'Please enter the phone number.'
+- Email*: empty → 'Please enter the email address.' | invalid format → 'Please enter a valid email address.'
+- Status*: no selection → 'Please select the vendor status.'
+
+Insurance/Refinance:
+- Service Contact Number*: invalid chars → 'Only numbers and + are allowed.' | empty → 'Please enter the service contact number.'
+- RSA Contact Number*: invalid chars → 'Only numbers and + are allowed.' | empty → 'Please enter the RSA contact number.'
+- Email Address: invalid format → 'Please enter a valid email address.'
+- Upload Logo: non-PNG → 'Only PNG files are allowed for logo upload.'
+- Hide Insurance*: no selection → 'Please select an option for hide insurance.'
+- Max Insurance Hide Days*: empty (when Hide Insurance=No) → 'Please enter maximum insurance hide days.' | non-numeric → 'Please enter a valid number of days.'
+- Insurance Message Title*: empty → 'Please enter the insurance message title.'
+- Insurance Message Body*: empty → 'Please enter the insurance message body.'
+- Hide Refinance*: no selection → 'Please select an option for hide refinance.'
+- Refinance Message Title*: empty → 'Please enter the refinance message title.'
+- Refinance Message Body*: empty → 'Please enter the refinance message body.'
+
+Plan Mapping:
+- Plan*: no selection → 'Please select a plan.'
+- Retail Price*: empty → 'Retail price is required.' | non-numeric → 'Retail price must be a numeric value.'
+- Maximum Price*: empty → 'Please enter the maximum price.' | non-numeric → 'Maximum price must be a numeric value.' | max < retail → 'Max price must be greater than or equal to retail price.'
+- No plans added → 'Please add at least one plan.'
+
+Agent Addition:
+- Vendor Name*: no selection → 'Please select a vendor.'
+- Email*: empty → 'Please enter the agent email address.' | invalid format → 'Please enter a valid email address.'
+- Duplicate email (same vendor) → 'Agent email addresses must be unique.'
+- No agents → 'Please add at least one agent.'
+
+Form submission (both): → 'Please complete all required fields before submitting.'
+
+=== BACKEND SERVICES ===
+vendor-service: POST to create vendor records
+agent-service: POST to create agent records
+Plan catalogue API: populates Plan dropdown (Name + UUID)
+Vendor list API: populates Vendor Name dropdown (Active vendors only)
+
+=== OUT OF SCOPE (Phase 2) ===
+Listing tables, filters, search, pagination, sort, view, edit, update, delete for both Vendor and Agent Management. Logo preview/download. Update CTA logic. Listing table columns.
+
+=== DEPENDENCIES & RISKS ===
+Phase 1 create-only: errors after submission require backend intervention until Phase 2 edit ships.
+No file size limit on PNG logo — large files may cause timeouts; limit recommended before Phase 2.
+Duplicate email is client-side per-vendor only — backend must also enforce per-vendor uniqueness.
+Max 50 agents per submission; bulk import >50 requires multiple submissions.
+No way to verify previously created records in Phase 1 (no listing).
+
+=== RESPONSE STYLE ===
+- Concise, direct, action-oriented
+- Use bullet points for clarity
+- Reference the exact spec section when relevant
+- If something is NOT defined in the spec, say clearly: "Not defined in the spec — please confirm with Jawahar."
+- Do not invent or assume behavior outside Phase 1 spec
+- When answering about features: check if it's in Phase 1 scope, check validations and edge cases, mention API behavior if relevant
+- Format key terms in bold, error messages in code format`;
+
+const chat = document.getElementById('chat');
+const input = document.getElementById('user-input');
+const sendBtn = document.getElementById('send-btn');
+let history = [];
+let isLoading = false;
+
+function formatText(raw) {
+  return raw
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/`(.*?)`/g, '<code>$1</code>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/^- (.+)$/gm, '<li>$1</li>')
+    .replace(/(<li>.*<\/li>\n?)+/g, m => `<ul>${m}</ul>`)
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/\n/g, '<br>');
+}
+
+function addMessage(role, text, isTyping = false) {
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+
+  const avatar = document.createElement('div');
+  avatar.className = `avatar ${role}-avatar`;
+  avatar.textContent = role === 'bot' ? 'W+' : 'You';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+
+  if (isTyping) {
+    bubble.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
+    div.id = 'typing-indicator';
+  } else {
+    bubble.innerHTML = `<p>${formatText(text)}</p>`;
+  }
+
+  div.appendChild(avatar);
+  div.appendChild(bubble);
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+  return div;
+}
+
+function removeTyping() {
+  const el = document.getElementById('typing-indicator');
+  if (el) el.remove();
+}
+
+async function sendMessage() {
+  const text = input.value.trim();
+  if (!text || isLoading) return;
+
+  addMessage('user', text);
+  history.push({ role: 'user', content: text });
+  input.value = '';
+  input.style.height = 'auto';
+  document.getElementById('quick-replies').style.display = 'none';
+
+  isLoading = true;
+  sendBtn.disabled = true;
+  addMessage('bot', '', true);
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: SYSTEM_PROMPT,
+        messages: history
+      })
+    });
+
+    const data = await res.json();
+    removeTyping();
+
+    const reply = data?.content?.[0]?.text || 'Sorry, I could not get a response. Please try again.';
+    history.push({ role: 'assistant', content: reply });
+    addMessage('bot', reply);
+  } catch (err) {
+    removeTyping();
+    addMessage('bot', '**Error:** Could not reach the API. Please check your connection and try again.');
+  }
+
+  isLoading = false;
+  sendBtn.disabled = false;
+}
+
+function sendQuick(text) {
+  input.value = text;
+  sendMessage();
+}
+
+// Auto-resize textarea
+input.addEventListener('input', () => {
+  input.style.height = 'auto';
+  input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+});
+
+input.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+
+// Welcome message
+window.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    addMessage('bot', `**Hey there!** 👋 I'm the Way+ Onboarding Assistant.\n\nI can help you understand the **Phase 1 spec** for vendor and agent management — including flows, validations, error messages, edge cases, and what's in/out of scope.\n\nAsk me anything, or pick one of the quick questions below.`);
+  }, 300);
+});
+</script>
+</body>
+</html>
